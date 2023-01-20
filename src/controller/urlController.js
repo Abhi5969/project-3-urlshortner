@@ -8,11 +8,16 @@ const createUrl = async function (req, res) {
     try {
 
         let reqLongUrl = req.body.longUrl
+        let data = req.body
         if (Object.keys(req.body).length == 0) return res.status(400).send({ status: false, message: "please enter url !!" })
 
         if ((typeof reqLongUrl) != "string") return res.status(400).send({ status: false, message: "url must be string" })
 
         if (!reqLongUrl.trim()) return res.status(400).send({ status: false, message: "please enter url first" })
+        const response = await axios.get(reqLongUrl)
+            .then(() => reqLongUrl)
+            .catch(() => null)
+        if (!response) return res.status(400).send({ status: false, msg: `The URL ${reqLongUrl} is not valid` })
         let urlData = await GET_ASYNC(`${reqLongUrl}`)
         let url = JSON.parse(urlData)
         if (url)
@@ -21,15 +26,12 @@ const createUrl = async function (req, res) {
                 message: "URL already shorten come from cache",
                 data: url
             })
-        const response = await axios.get(reqLongUrl)
-            .then(() => reqLongUrl)
-            .catch(() => null)
-        if (!response) return res.status(400).send({ status: false, msg: `The URL ${reqLongUrl} is not valid` })
+        
 
         const findUrl = await urlModel.findOne({ longUrl: reqLongUrl }).select({ urlCode: 1, longUrl: 1, shortUrl: 1, _id: 0 })
 
         if (findUrl) {
-            await SET_ASYNC(`${reqLongUrl}`, 100, JSON.stringify(findUrl))
+            await SET_ASYNC(`${reqLongUrl}`, 86400, JSON.stringify(findUrl))
             return res.status(200).send({ status: true, message: "URL already shorten", data: findUrl })
         }
 
@@ -44,6 +46,7 @@ const createUrl = async function (req, res) {
 
 
         let shortnerUrl = { urlCode: crteateData.urlCode, longUrl: crteateData.longUrl, shortUrl: crteateData.shortUrl }
+        await SET_ASYNC(`${reqLongUrl}`, 86400, JSON.stringify(shortnerUrl))
 
         res.status(201).send({ status: true, data: shortnerUrl })
 
@@ -67,7 +70,7 @@ const getUrl = async function (req, res) {
 
         if (!url) return res.status(404).send({ status: true, message: "The URL is not found." })
 
-        await SET_ASYNC(`${reqUrl}`, 89, JSON.stringify(url))
+        await SET_ASYNC(`${reqUrl}`, 86400, JSON.stringify(url))
         console.log("abhi")
         return res.status(302).redirect(url.longUrl)
     }
