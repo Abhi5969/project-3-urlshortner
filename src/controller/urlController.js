@@ -1,5 +1,4 @@
 const urlModel = require("../models/urlModel.js")
-const validator = require("validator")
 const shortId = require("shortid")
 const axios = require('axios')
 const { SET_ASYNC, GET_ASYNC } = require("../routes/cache")
@@ -27,7 +26,6 @@ const createUrl = async function (req, res) {
                 data: url
             })
         
-
         const findUrl = await urlModel.findOne({ longUrl: reqLongUrl }).select({ urlCode: 1, longUrl: 1, shortUrl: 1, _id: 0 })
 
         if (findUrl) {
@@ -43,7 +41,6 @@ const createUrl = async function (req, res) {
         data['longUrl'] = reqLongUrl
 
         const crteateData = await urlModel.create(data)
-
 
         let shortnerUrl = { urlCode: crteateData.urlCode, longUrl: crteateData.longUrl, shortUrl: crteateData.shortUrl }
         await SET_ASYNC(`${reqLongUrl}`, 86400, JSON.stringify(shortnerUrl))
